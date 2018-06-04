@@ -2,6 +2,8 @@ package chat
 
 import (
 	"net"
+
+	"github.com/jinzhu/gorm"
 )
 
 type room struct {
@@ -11,6 +13,7 @@ type room struct {
 	shutdown chan struct{}
 	clients  []*client
 	listener net.Listener
+	db       *gorm.DB
 }
 
 func (room *room) broadcast(message message) {
@@ -31,14 +34,8 @@ func (room *room) listen() {
 		for {
 			select {
 			case message := <-room.outgoing:
-				// if strings.HasPrefix(message.text, "#") {
-				// 	roomName := strings.Split(message.text, "#")
-				// 	room := room.server.createRoom(strings.Join(roomName, ""))
-				// 	room.addClient(message.sender)
-				// } else {
-				// 	room.broadcast(message)
-				// }
 				room.broadcast(message)
+				room.db.Create(&chatMessage{Text: message.text, Sender: message.sender.name})
 			}
 		}
 	}()
